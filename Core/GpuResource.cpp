@@ -842,6 +842,56 @@ TypedBuffer::CreateDerivedViews()
 }
 
 //------------------------------------------------------------------------------
+// ReadBackTypedBuffer
+//------------------------------------------------------------------------------
+void
+ReadBackTypedBuffer::Create(const std::wstring& Name, uint32_t NumElements,
+    uint32_t ElementSize, const void* InitData /* = nullptr */)
+{
+    m_ElementCount = NumElements;
+    m_ElementSize = ElementSize;
+    m_BufferSize = NumElements*ElementSize;
+
+    D3D12_RESOURCE_DESC ResourceDesc = DescribeBuffer();
+
+    m_UsageState = D3D12_RESOURCE_STATE_COMMON;
+
+    D3D12_HEAP_PROPERTIES HeapProps;
+    HeapProps.Type = D3D12_HEAP_TYPE_CUSTOM;
+    HeapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+    HeapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+    HeapProps.CreationNodeMask = 1;
+    HeapProps.VisibleNodeMask = 1;
+
+    HRESULT hr;
+    V(Graphics::g_device->CreateCommittedResource(
+        &HeapProps, D3D12_HEAP_FLAG_NONE,
+        &ResourceDesc, m_UsageState, nullptr, IID_PPV_ARGS(&m_pResource)));
+    m_GpuVirtualAddress = m_pResource->GetGPUVirtualAddress();
+    if (InitData) {
+        CommandContext::InitializeBuffer(*this, InitData, m_BufferSize);
+    }
+#ifdef RELEASE
+    (Name);
+#else
+    m_pResource->SetName(Name.c_str());
+#endif
+    CreateDerivedViews();
+}
+
+void
+ReadBackTypedBuffer::Map(const D3D12_RANGE *pReadRange, void **ppData)
+{
+    m_pResource->Map(0, pReadRange, ppData);
+}
+
+void
+ReadBackTypedBuffer::Unmap(const D3D12_RANGE *pReadRange)
+{
+    m_pResource->Unmap(0, pReadRange);
+}
+
+//------------------------------------------------------------------------------
 // Texture
 //------------------------------------------------------------------------------
 void

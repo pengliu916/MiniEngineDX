@@ -391,6 +391,18 @@ protected:
 };
 
 //------------------------------------------------------------------------------
+// ReadBackTypedBuffer
+//------------------------------------------------------------------------------
+class ReadBackTypedBuffer : public TypedBuffer
+{
+public:
+    void Create(const std::wstring& Name, uint32_t NumElements,
+        uint32_t ElementSize, const void* InitData = nullptr);
+    void Map(const D3D12_RANGE *pReadRange, void **ppData);
+    void Unmap(const D3D12_RANGE *pReadRange);
+};
+
+//------------------------------------------------------------------------------
 // IndirectArgsBuffer
 //------------------------------------------------------------------------------
 class IndirectArgsBuffer : public ByteAddressBuffer
